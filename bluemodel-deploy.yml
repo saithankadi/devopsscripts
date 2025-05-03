@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydeploy
+  labels:
+    app: blue-app
+    version: bluemodel
+spec:
+  replicas: 8
+  selector:
+    matchLabels:
+      app: blue-app
+      version: bluemodel
+  template:
+    metadata:
+      labels:
+        app: blue-app
+        version: bluemodel
+    spec:
+      containers:
+        - name: appcont
+          image: abhitesh003/myrepo:netflix
+          ports:
+            - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue-app-service
+spec:
+  selector:
+    app: blue-app
+    version: bluemodel
+  ports:
+    - port: 80
+      nodePort: 31587
+      targetPort: 80
+      protocol: TCP
+  type: LoadBalancer
+
+---
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-blue-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mydeploy
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 20
